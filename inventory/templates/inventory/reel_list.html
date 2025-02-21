@@ -7,10 +7,10 @@
   <title>Reel Inventory</title>
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <!-- Custom CSS (if needed) -->
   <link rel="stylesheet" href="{% static 'inventory/styles.css' %}">
 </head>
 <body>
+
   <!-- Navigation Bar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <a class="navbar-brand" href="#">Inventory System</a>
@@ -18,29 +18,36 @@
       aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <!-- You can add more navigation links here if needed -->
   </nav>
 
   <!-- Main Content -->
   <div class="container mt-4">
     <h1 class="mb-4 text-center">Reel Inventory</h1>
+
+    <!-- Low Stock Warning -->
+    {% if low_stock_reels %}
+      <div class="alert alert-warning text-center">
+        <strong>Warning:</strong> Some reels are running low on stock!
+      </div>
+    {% endif %}
+
     <div class="table-responsive">
       <table class="table table-striped table-bordered">
         <thead class="thead-dark">
           <tr>
             <th>Reel Code</th>
             <th>Reel Type</th>
-            <th>Size (mm)</th>
+            <th>Size (inch)</th>
             <th>Weight (kg)</th>
             <th>Current Stock (kg)</th>
           </tr>
         </thead>
         <tbody>
           {% for reel in reels %}
-          <tr>
+          <tr {% if reel.current_stock <= 10 %} class="table-danger" {% endif %}>  <!-- Highlight low stock -->
             <td>{{ reel.reel_code }}</td>
             <td>{{ reel.reel_type }}</td>
-            <td>{{ reel.size_mm }}</td>
+            <td>{{ reel.size_inch }}</td>  <!-- Updated to use size_inch -->
             <td>{{ reel.weight_kg }}</td>
             <td>{{ reel.current_stock }}</td>
           </tr>

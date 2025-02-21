@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "size_mm",
+                    "size_inch",
                     models.DecimalField(
                         decimal_places=2,
                         help_text="Size in mm (e.g., 26.00 to 52.00)",

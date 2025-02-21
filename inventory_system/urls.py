@@ -19,5 +19,5 @@ from django.urls import path, include  # Import include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('index/', include('inventory.urls')),  # Include URLs from the inventory app
+    path('inventory/', include('inventory.urls')),  # Include URLs from the inventory app
 ]

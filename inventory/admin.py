@@ -4,7 +4,7 @@ from .models import Reel, DailyUsage
 
 @admin.register(Reel)
 class ReelAdmin(admin.ModelAdmin):
-    list_display = ('reel_code', 'reel_type', 'size_mm', 'weight_kg', 'current_stock')
+    list_display = ('reel_code', 'reel_type', 'size_inch', 'weight_kg', 'current_stock')
     search_fields = ('reel_code', 'reel_type')
 
 @admin.register(DailyUsage)
