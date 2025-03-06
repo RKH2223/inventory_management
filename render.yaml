@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: inventory-system
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py migrate  # Run migrations automatically
+    startCommand: gunicorn inventory_system.wsgi:application
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # Set this to true if using an environment variable
+      - key: ALLOWED_HOSTS
+        value: "your-render-url.onrender.com"
