@@ -89,7 +89,6 @@
               <tr>
                 <th>Reel Code</th>
                 <th>Reel Type</th>
-                <th>GSM</th>
                 <th>Size (inch)</th>
                 <th>Current Stock (kg)</th>
                 <th>Actions</th>
@@ -102,7 +101,6 @@
                <tr {% if reel.current_stock <= 200 %} class="table-danger" {% endif %}>
                 <td>{{ reel.reel_code }}</td>
                 <td>{{ reel.reel_type }}</td>
-                <td>{{reel.reel_GSM}}</td>
                 <td>{{ reel.size_inch }}</td>
                 <td>{{ reel.current_stock }}</td>
                 <td>

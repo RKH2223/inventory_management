@@ -218,13 +218,11 @@ def add_daily_usage(request):
 
             if daily_usage.reel and daily_usage.used_weight:  # Ensure reel exists
                 if daily_usage.reel.current_stock >= daily_usage.used_weight:
-                    print("Before update: ", daily_usage.reel.current_stock)
+                    
 
                     Reel.objects.filter(id=daily_usage.reel.id).update(
                         current_stock=F('current_stock') - Decimal(daily_usage.used_weight)
                     )
-                    print("After update: ", daily_usage.reel.current_stock)
-                    print("smart printing original: ", Reel.objects.filter(id=daily_usage.reel.id).values('current_stock'))
 
                     messages.success(request, "Daily usage logged successfully.")
                     print('Daily usage updated: ', daily_usage.reel.current_stock)
