@@ -132,6 +132,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # settings.py
 import dj_database_url  
 DATABASES = {  
-    "default": dj_database_url.config(default="https://dashboard.render.com/d/dpg-cv4nm93tq21c73fcqgq0-a")  
+    "default": dj_database_url.config(default="postgresql://inventory_system_vvhi_user:ziFwCOpTqBWDMVLdNuS8o5dreS8vSLKJ@dpg-cv4nm93tq21c73fcqgq0-a/inventory_system_vvhi")  
 }
 
