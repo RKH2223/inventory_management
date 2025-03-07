@@ -25,5 +25,5 @@ from django.urls import path, include  # Import include
 urlpatterns = [
     path('admin/', admin.site.urls),
     # path("", home),  # This sets the homepage URL
-    path('inventory/', include('inventory.urls')),  # Include URLs from the inventory app
+    path('', include('inventory.urls')),  # Include URLs from the inventory app
 ]
