@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-o)@10$kugbt^l&#j&+u2oz_=dvp+*gru+zoks4&qry3ofuubl4"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False   
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['rk2202.pythonanywhere.com']
 
 
 
@@ -129,9 +129,9 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# settings.py
-import dj_database_url  
-DATABASES = {  
-    "default": dj_database_url.config(default="postgresql://inventory_system_vvhi_user:ziFwCOpTqBWDMVLdNuS8o5dreS8vSLKJ@dpg-cv4nm93tq21c73fcqgq0-a/inventory_system_vvhi")  
-}
+# # settings.py
+# import dj_database_url  
+# DATABASES = {  
+#     "default": dj_database_url.config(default="postgresql://inventory_system_vvhi_user:ziFwCOpTqBWDMVLdNuS8o5dreS8vSLKJ@dpg-cv4nm93tq21c73fcqgq0-a/inventory_system_vvhi")  
+# }
 

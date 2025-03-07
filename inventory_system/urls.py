@@ -15,15 +15,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.http import HttpResponse
+# from django.http import HttpResponse
 from django.urls import path, include  # Import include
 
 
-def home(request):
-    return HttpResponse("Hello, your Django app is working!")
+# def home(request):
+#     return HttpResponse("Hello, your Django app is working!")
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("", home),  # This sets the homepage URL
+    # path("", home),  # This sets the homepage URL
     path('inventory/', include('inventory.urls')),  # Include URLs from the inventory app
 ]
