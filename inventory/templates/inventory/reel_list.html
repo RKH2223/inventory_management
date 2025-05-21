@@ -32,39 +32,122 @@
     {% endif %}
 
     <div class="table-responsive">
-      <table class="table table-striped table-bordered">
-        <thead class="thead-dark">
+      <table class="table table-hover">
+        <thead>
           <tr>
             <th>Reel Code</th>
-            <th>Reel Type</th>
+            <th>Type</th>
             <th>Size (inch)</th>
-            <th>Weight (kg)</th>
             <th>Current Stock (kg)</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for reel in reels %}
-          <tr {% if reel.current_stock <= 10 %} class="table-danger" {% endif %}>  <!-- Highlight low stock -->
+          <tr {% if reel.current_stock <= 200 %}class="table-danger"{% endif %}>
             <td>{{ reel.reel_code }}</td>
-            <td>{{ reel.reel_type }}</td>
-            <td>{{ reel.size_inch }}</td>  <!-- Updated to use size_inch -->
-            <td>{{ reel.weight_kg }}</td>
-            <td>{{ reel.current_stock }}</td>
+            <td>
+              <span class="badge {% if reel.reel_type == 'natural' %}bg-primary{% else %}bg-warning{% endif %}">
+                {{ reel.reel_type|title }}
+              </span>
+            </td>
+            <td>{{ reel.size_inch }}</td>
+            <td>
+              <span class="font-weight-bold {% if reel.current_stock <= 200 %}text-danger{% endif %}">
+                {{ reel.current_stock|floatformat:2 }}
+              </span>
+            </td>
+            <td>
+              <div class="btn-group">
+                <a href="{% url 'reel_report' reel.pk %}" class="btn btn-info btn-sm">
+                  <i class="fas fa-chart-bar"></i> Report
+                </a>
+                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ reel.pk }}">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </div>
+            </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="5" class="text-center">No reels available.</td>
+            <td colspan="5" class="text-center py-4">
+              <div class="text-muted">
+                <i class="fas fa-search fa-2x mb-2"></i>
+                <p>No reels found</p>
+              </div>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+
+    {% if reels.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+      <ul class="pagination justify-content-center">
+        {% if reels.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ reels.previous_page_number }}" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+          <span class="page-link" aria-hidden="true">&laquo;</span>
+        </li>
+        {% endif %}
+
+        {% for num in reels.paginator.page_range %}
+          {% if reels.number == num %}
+          <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+          </li>
+          {% elif num > reels.number|add:'-3' and num < reels.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+          </li>
+          {% endif %}
+        {% endfor %}
+
+        {% if reels.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ reels.next_page_number }}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+          <span class="page-link" aria-hidden="true">&raquo;</span>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
   </div>
 
-  <!-- Footer -->
-  <footer class="bg-light text-center py-3 mt-4">
-    <p class="mb-0">&copy; 2025 Inventory Management System. All rights reserved.</p>
-  </footer>
+  <!-- Delete Modals -->
+  {% for reel in reels %}
+  <div class="modal fade" id="deleteModal{{ reel.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ reel.pk }}" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteModalLabel{{ reel.pk }}">Delete Reel</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete reel "{{ reel.reel_code }}"?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <form method="post" action="{% url 'delete_reel' reel.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
 
   <!-- Bootstrap JS and dependencies -->
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

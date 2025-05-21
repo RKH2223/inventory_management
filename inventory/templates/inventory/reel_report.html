@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Reel Details Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Reel Details</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Reel Code:</strong> {{ reel.reel_code }}</p>
+                    <p><strong>Type:</strong> {{ reel.reel_type|title }}</p>
+                    <p><strong>Size:</strong> {{ reel.size_inch }} inch</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Current Stock:</strong> {{ reel.current_stock|floatformat:2 }} kg</p>
+                    <p><strong>Total Usage:</strong> {{ total_usage|floatformat:2 }} kg</p>
+                    <p><strong>Status:</strong> 
+                        {% if reel.current_stock <= 200 %}
+                            <span class="badge bg-danger">Low Stock</span>
+                        {% else %}
+                            <span class="badge bg-success">In Stock</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Usage Statistics -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Monthly Usage Statistics</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Total Usage (kg)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usage in monthly_usage %}
+                        <tr>
+                            <td>{{ usage.year }}-{{ usage.month|stringformat:"02d" }}</td>
+                            <td>{{ usage.total_usage|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center">No monthly usage data available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage History -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Usage History</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Used Weight (kg)</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usage in usage_history %}
+                        <tr>
+                            <td>{{ usage.usage_date }}</td>
+                            <td>{{ usage.used_weight|floatformat:2 }}</td>
+                            <td>{{ usage.remarks|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">No usage history available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add any JavaScript for charts or interactivity here
+</script>
+{% endblock %} 

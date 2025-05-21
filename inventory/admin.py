@@ -9,7 +9,7 @@ class ReelAdmin(admin.ModelAdmin):
 
 @admin.register(DailyUsage)
 class DailyUsageAdmin(admin.ModelAdmin):
-    list_display = ('reel', 'used_weight', 'usage_date', 'operator')
+    list_display = ('reel', 'used_weight', 'usage_date', 'remarks')
     list_filter = ('usage_date', 'reel__reel_type')
 # 
 # Register your models here.

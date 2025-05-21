@@ -17,6 +17,12 @@ Including another URLconf
 from django.contrib import admin
 # from django.http import HttpResponse
 from django.urls import path, include  # Import include
+from inventory.views import (
+    DashboardView, add_reel, add_daily_usage,
+    delete_reel, edit_reel, ReelReportView,
+    ReportsView, CustomLoginView, register
+)
+from django.contrib.auth import views as auth_views
 
 
 # def home(request):
@@ -25,5 +31,16 @@ from django.urls import path, include  # Import include
 urlpatterns = [
     path('admin/', admin.site.urls),
     # path("", home),  # This sets the homepage URL
-    path('', include('inventory.urls')),  # Include URLs from the inventory app
+    path('', DashboardView.as_view(), name='dashboard'),
+    path('add-reel/', add_reel, name='add_reel'),
+    path('add-daily-usage/', add_daily_usage, name='add_daily_usage'),
+    path('delete-reel/<int:pk>/', delete_reel, name='delete_reel'),
+    path('edit-reel/<int:pk>/', edit_reel, name='edit_reel'),
+    path('reel-report/<int:pk>/', ReelReportView.as_view(), name='reel_report'),
+    path('reports/', ReportsView.as_view(), name='reports'),
+    
+    # Authentication URLs
+    path('accounts/login/', CustomLoginView.as_view(), name='login'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('accounts/register/', register, name='register'),
 ]
