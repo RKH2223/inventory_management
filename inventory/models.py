@@ -9,7 +9,7 @@ class Reel(models.Model):
         ('golden', 'Golden'),
     ]
     
-    reel_code = models.CharField(max_length=50, unique=True, help_text="Code for this reel")
+    reel_code = models.CharField(max_length=50, help_text="Code for this reel")
     reel_type = models.CharField(max_length=20, choices=REEL_TYPE_CHOICES, help_text="Type of reel: Natural or Golden")
     # reel_GSM =  models.DecimalField(max_digits=5,decimal_places=2,null=True,help_text="enter the GSM of paper ")
     size_inch = models.DecimalField(max_digits=5, decimal_places=2, help_text="Size in inch (e.g., 26.00 to 52.00)")
