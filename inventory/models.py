@@ -11,7 +11,6 @@ class Reel(models.Model):
     
     reel_code = models.CharField(max_length=50, help_text="Code for this reel")
     reel_type = models.CharField(max_length=20, choices=REEL_TYPE_CHOICES, help_text="Type of reel: Natural or Golden")
-    # reel_GSM =  models.DecimalField(max_digits=5,decimal_places=2,null=True,help_text="enter the GSM of paper ")
     size_inch = models.DecimalField(max_digits=5, decimal_places=2, help_text="Size in inch (e.g., 26.00 to 52.00)")
     weight_kg = models.DecimalField(max_digits=10, decimal_places=2, help_text="Weight of the reel in kg")
     current_stock = models.DecimalField(
@@ -21,7 +20,7 @@ class Reel(models.Model):
     updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ['reel_code']  # Default ordering by reel code
+        ordering = ['reel_code']
 
     def __str__(self):
         return f"{self.reel_code} - {self.reel_type} ({self.size_inch} inch)"
@@ -29,6 +28,11 @@ class Reel(models.Model):
     def save(self, *args, **kwargs):
         if not self.created_at:
             self.created_at = timezone.now()
+        
+        # Set current_stock = weight_kg only if this is a new instance (no pk yet)
+        if not self.pk:
+            self.current_stock = self.weight_kg
+
         self.updated_at = timezone.now()
         super().save(*args, **kwargs)
         
