@@ -1,46 +1,40 @@
-"""
-URL configuration for inventory_system project.
+# inventory_system/urls.py
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
-# from django.http import HttpResponse
-from django.urls import path, include  # Import include
-from inventory.views import (
-    DashboardView, add_reel, add_daily_usage,
-    delete_reel, edit_reel, ReelReportView,
-    ReportsView, CustomLoginView, register
-)
-from django.contrib.auth import views as auth_views
+from django.urls import path, include, reverse_lazy # Import reverse_lazy
+from django.contrib.auth import views as auth_views # Import Django's auth views
 
-
-# def home(request):
-#     return HttpResponse("Hello, your Django app is working!")
+# Import your custom views from the inventory app
+from inventory.views import CustomLoginView, register
+# Assuming your dashboard view is also in inventory.views
+# from inventory.views import DashboardView # Add if needed for explicit URL names
 
 urlpatterns = [
+    # 1. Django Admin Interface
     path('admin/', admin.site.urls),
-    # path("", home),  # This sets the homepage URL
-    path('', DashboardView.as_view(), name='dashboard'),
-    path('add-reel/', add_reel, name='add_reel'),
-    path('add-daily-usage/', add_daily_usage, name='add_daily_usage'),
-    path('delete-reel/<int:pk>/', delete_reel, name='delete_reel'),
-    path('edit-reel/<int:pk>/', edit_reel, name='edit_reel'),
-    path('reel-report/<int:pk>/', ReelReportView.as_view(), name='reel_report'),
-    path('reports/', ReportsView.as_view(), name='reports'),
-    
-    # Authentication URLs
+
+    # 2. Your Custom Authentication URLs
+    #    Place these BEFORE `include('django.contrib.auth.urls')` to ensure your
+    #    custom views take precedence and are resolved first.
+
+    # Custom Login URL: Maps to your CustomLoginView
     path('accounts/login/', CustomLoginView.as_view(), name='login'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+
+    # Custom Registration URL: Maps to your custom register function
     path('accounts/register/', register, name='register'),
+
+    # Logout URL: Using Django's built-in LogoutView,
+    # and redirecting to your 'login' page after logout.
+    path('accounts/logout/', auth_views.LogoutView.as_view(next_page=reverse_lazy('login')), name='logout'),
+
+    # 3. Remaining Django Auth URLs (for password reset, change etc.)
+    #    This includes password_reset, password_reset_done, password_reset_confirm,
+    #    password_reset_complete.
+    #    These will use Django's default templates (e.g., registration/password_reset_form.html)
+    #    You would need to create those templates if you want to customize their appearance.
+    path('accounts/', include('django.contrib.auth.urls')),
+
+    # 4. Include your application's URLs (inventory app)
+    #    This should generally be the last pattern for your main app to catch remaining routes.
+    path('', include('inventory.urls')),
 ]

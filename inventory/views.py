@@ -10,6 +10,9 @@ from django.urls import reverse_lazy
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from django.core.paginator import Paginator
+from django.contrib.auth import login, authenticate, logout 
+from django.core.cache import cache
+from .forms import NewReelForm, DailyUsageForm, UserLoginForm # Add UserLoginForm
 
 
 from .models import Reel, DailyUsage
@@ -17,20 +20,49 @@ from .forms import NewReelForm, DailyUsageForm
 
 LOW_STOCK_THRESHOLD = 200  # Define threshold for low stock warning
 
-class CustomLoginView(LoginRequiredMixin, View):
+class CustomLoginView(View): # Inherit from View, NOT LoginRequiredMixin
     template_name = 'inventory/login.html'
-    redirect_authenticated_user = True
-    success_url = reverse_lazy('dashboard')
 
-    def get_success_url(self):
-        return self.success_url
+    def get(self, request, *args, **kwargs):
+        # If the user is already authenticated, redirect them away from the login page
+        if request.user.is_authenticated:
+            return redirect(reverse_lazy('dashboard')) # Or whatever your LOGIN_REDIRECT_URL is set to
+
+        form = UserLoginForm() # Instantiate your custom login form
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        form = UserLoginForm(request, data=request.POST) # Pass request to AuthenticationForm/UserLoginForm
+
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+
+            # Authenticate the user
+            user = authenticate(request, username=username, password=password)
+
+            if user is not None:
+                # If authentication is successful, log the user in
+                login(request, user)
+                messages.success(request, f"Welcome back, {username}!")
+                # Redirect to the dashboard or the page they were trying to access
+                return redirect(reverse_lazy('dashboard'))
+            else:
+                # If authentication fails
+                messages.error(request, "Invalid username or password.")
+        else:
+            # If form is not valid (e.g., empty fields)
+            messages.error(request, "Please correct the errors below.")
+            # The form will contain specific errors for each field
+
+        return render(request, self.template_name, {'form': form})
 
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
+            login(request, user) # This logs the new user in
             messages.success(request, 'Account created successfully!')
             return redirect('dashboard')
         else:

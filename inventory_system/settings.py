@@ -135,8 +135,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 #     "default": dj_database_url.config(default="postgresql://inventory_system_vvhi_user:ziFwCOpTqBWDMVLdNuS8o5dreS8vSLKJ@dpg-cv4nm93tq21c73fcqgq0-a/inventory_system_vvhi")  
 # }
 
-# Authentication settings
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'login'
-
+# ...
+LOGIN_REDIRECT_URL = 'dashboard' # Or whatever your dashboard URL name is
+LOGIN_URL = 'login' # <-- Change this from '/accounts/login/' to just 'login'
+LOGOUT_REDIRECT_URL = 'login' # <-- Change this from 'login' to 'login' (already correct)
+# ...

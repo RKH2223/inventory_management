@@ -1,6 +1,9 @@
 from django import forms
 from .models import Reel, DailyUsage
 
+from django.contrib.auth.forms import AuthenticationForm # We'll still use this as a base for simplicity
+
+
 class NewReelForm(forms.ModelForm):
     class Meta:
         model = Reel
@@ -59,17 +62,28 @@ class DailyUsageForm(forms.ModelForm):
                 'placeholder': 'Enter any remarks (optional)',
                 'rows': '3'
             }),
-            'usage_date': forms.DateInput(attrs={'type': 'date'}),
+            'usage_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}), # Added class for consistency
+        }
+        labels = { # Good to have these explicitly for better control
+            'reel': 'Select Reel',
+            'used_weight': 'Used Weight (Kg)',
+            'usage_date': 'Usage Date',
+            'remarks': 'Remarks (Optional)',
         }
 
+
+    # --- ADD THIS __init__ METHOD HERE ---
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)  # Expect user passed from view
+        # Extract the 'user' object passed from the view, if it exists
+        user = kwargs.pop('user', None)
+        # Call the parent class's __init__ method
         super().__init__(*args, **kwargs)
+
+        # If a user object was provided, filter the queryset for the 'reel' field
         if user:
-            # Only show reels with stock > 0 owned by this user
-            self.fields['reel'].queryset = Reel.objects.filter(user=user, current_stock__gt=0)
+            self.fields['reel'].queryset = Reel.objects.filter(user=user).order_by('reel_code')
         else:
-            # fallback empty queryset if user not provided
+            # If no user is provided, or for safety, ensure no reels are displayed
             self.fields['reel'].queryset = Reel.objects.none()
 
     def clean_used_weight(self):
@@ -85,3 +99,18 @@ class DailyUsageForm(forms.ModelForm):
             raise forms.ValidationError("Used weight must be greater than 0")
             
         return used_weight
+
+class UserLoginForm(AuthenticationForm):
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Username'})
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Password'})
+    )
+
+    # You can add custom validation or fields here if needed
+    # For example, to ensure it doesn't show "This field is required" error directly for username/password:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].label = False
+        self.fields['password'].label = False
