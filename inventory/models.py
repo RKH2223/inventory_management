@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 class Reel(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)  # 🔑 Added user field
     REEL_TYPE_CHOICES = [
         ('natural', 'Natural'),
         ('golden', 'Golden'),
@@ -35,10 +36,10 @@ class Reel(models.Model):
 
         self.updated_at = timezone.now()
         super().save(*args, **kwargs)
-        
 
 
 class DailyUsage(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)  # 🔑 Added user field
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE)
     used_weight = models.DecimalField(max_digits=10, decimal_places=2)
     usage_date = models.DateField(default=timezone.now)

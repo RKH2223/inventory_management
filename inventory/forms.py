@@ -63,9 +63,14 @@ class DailyUsageForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)  # Expect user passed from view
         super().__init__(*args, **kwargs)
-        # Only show reels with stock > 0
-        self.fields['reel'].queryset = Reel.objects.filter(current_stock__gt=0)
+        if user:
+            # Only show reels with stock > 0 owned by this user
+            self.fields['reel'].queryset = Reel.objects.filter(user=user, current_stock__gt=0)
+        else:
+            # fallback empty queryset if user not provided
+            self.fields['reel'].queryset = Reel.objects.none()
 
     def clean_used_weight(self):
         used_weight = self.cleaned_data['used_weight']
