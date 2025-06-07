@@ -3,11 +3,9 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import DailyUsage, Reel
 
-
 LOW_STOCK_THRESHOLD = 10.0
 # Ensure this is different from your Twilio phone number
 ALERT_PHONE_NUMBER = '+919426998061'  # Replace with a verified, different number
-
 
 def check_low_stock(sender, instance, created, **kwargs):
     if created:

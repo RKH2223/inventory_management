@@ -1,94 +1,109 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Reel, DailyUsage
+from .models import Reel, DailyUsage, CustomUser
 from .forms import NewReelForm, DailyUsageForm
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .forms import NewReelForm
-from django.shortcuts import render, redirect
-from .models import Reel
-from .forms import NewReelForm
-from django.contrib import messages
-from django.db.models import F
-from decimal import Decimal  # Import Decimal
-from django.db.models import Q
+from django.db.models import F, Q, Sum, Count
+from decimal import Decimal
 from django.core.cache import cache
-from django.db.models import Sum
-from django.views.decorators.cache import cache_page
-from django.utils.decorators import method_decorator
-from django.views.generic import ListView, DetailView, TemplateView
-from django.core.paginator import Paginator
+from django.views.generic import ListView, DetailView, TemplateView, View
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from django.db.models import Count
-from django.db.models.functions import TruncMonth
 from django.db.models.functions import ExtractYear, ExtractMonth
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import View
-from django.contrib.auth.views import LoginView
-from django.urls import reverse_lazy
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
-from django.db.models import Avg
-from django.db.models.functions import TruncDate
-from datetime import datetime, timedelta
-from django.http import HttpResponse
-import csv
+from datetime import datetime
+from .forms import CustomUserCreationForm
+from django.shortcuts import render, redirect
+from .forms import CustomUserCreationForm
+from django.contrib import messages
+
+LOW_STOCK_THRESHOLD = 200
+
+# Custom login view without Django auth
+class CustomLoginView(View):
+    def get(self, request):
+        # Clear any existing session data
+        if 'user_id' in request.session:
+            del request.session['user_id']
+            del request.session['username']
+        return render(request, 'inventory/login.html')
+
+    def post(self, request):
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        try:
+            user = CustomUser.objects.get(username=username)
+            if user.check_password(password):
+                # Store user info in session
+                request.session['user_id'] = user.id
+                request.session['username'] = user.username
+                messages.success(request, f"Welcome back, {user.username}!")
+                return redirect('dashboard')
+            else:
+                messages.error(request, "Incorrect password.")
+        except CustomUser.DoesNotExist:
+            messages.error(request, "User not found.")
+
+        return render(request, 'inventory/login.html')
 
 
-class CustomLoginView(LoginView):
-    template_name = 'inventory/login.html'
-    redirect_authenticated_user = True
-    success_url = reverse_lazy('dashboard')
 
-    def get_success_url(self):
-        return self.success_url
 
 def register(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
+        
             user = form.save()
-            login(request, user)
-            messages.success(request, 'Account created successfully!')
-            return redirect('dashboard')
+            messages.success(request, "Account created successfully! Please log in.")
+            return redirect('login')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            messages.error(request, "Please fix the errors below.")
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
+
     return render(request, 'inventory/register.html', {'form': form})
 
-LOW_STOCK_THRESHOLD = 200.00
+
+
+
+def logout_view(request):
+    # Clear specific session variables
+    if 'user_id' in request.session:
+        del request.session['user_id']
+    if 'username' in request.session:
+        del request.session['username']
+    
+    # Flush the entire session
+    request.session.flush()
+    
+    messages.success(request, "You have been logged out successfully.")
+    return redirect('login')
+
+
+# Replace @login_required and LoginRequiredMixin manually by checking session
 
 def inventory_view(request):
-    return render(request, 'inventory.html')  # Change 'inventory.html' to your actual template file
-
-from django.core.paginator import Paginator
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Reel
-from .forms import NewReelForm, DailyUsageForm
-
-LOW_STOCK_THRESHOLD = 200  # Define threshold for low stock warning
+    if not request.session.get('user_id'):
+        return redirect('login')
+    return render(request, 'inventory.html')
 
 
 def deepview(request):
+    if not request.session.get('user_id'):
+        return redirect('login')
     return render(request, 'inventory/reel_list.html')
 
 
-# def search_reel(request):
-#     query = request.GET.get('q')  # Get search term from URL query parameters
-#     try:
-#         searched_reels = Reel.objects.filter(reel_code__icontains=query) if query else []
-#     except Exception as e:
-#         print("some issues in Database during the fetching the data.", e)
-#     return render(request, 'inventory/dashboard.html', {'searched_reels': searched_reels , 'query': query})
-
-
-class DashboardView(LoginRequiredMixin, View):
+# Example for the dashboard view
+class DashboardView(View):
     def get(self, request, *args, **kwargs):
-        # Handle AJAX requests
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return redirect('login')
+
+        # Filter reels by the logged-in user
+        reels = Reel.objects.filter(user_id=user_id).order_by('reel_code')
+        
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             html = render_to_string(
                 'inventory/reel_list.html',
@@ -97,30 +112,25 @@ class DashboardView(LoginRequiredMixin, View):
             )
             return JsonResponse({'html': html})
 
-        # Get search query if any
         search_query = request.GET.get('search', '')
-        
-        # Get all reels with consistent ordering
-        reels = Reel.objects.all().order_by('reel_code')
-        
-        # Apply search filter if query exists
+        reels = Reel.objects.filter(user_id=user_id).order_by('reel_code')  # filter by logged-in user
+
         if search_query:
             reels = reels.filter(
                 Q(reel_code__icontains=search_query) |
                 Q(reel_type__icontains=search_query)
             )
-        
-        # Calculate statistics
+
         total_reels = reels.count()
         total_stock = reels.aggregate(Sum('current_stock'))['current_stock__sum'] or 0
-        low_stock_count = reels.filter(current_stock__lte=200).count()
+        low_stock_count = reels.filter(current_stock__lte=LOW_STOCK_THRESHOLD).count()
         avg_stock_per_reel = total_stock / total_reels if total_reels > 0 else 0
-        
-        # Pagination
-        paginator = Paginator(reels, 10)  # Show 10 reels per page
+
+        from django.core.paginator import Paginator
+        paginator = Paginator(reels, 10)
         page_number = request.GET.get('page')
         reels = paginator.get_page(page_number)
-        
+
         context = {
             'reels': reels,
             'total_reels': total_reels,
@@ -129,15 +139,20 @@ class DashboardView(LoginRequiredMixin, View):
             'avg_stock_per_reel': avg_stock_per_reel,
             'search_query': search_query,
         }
-        
+
         return render(request, 'inventory/dashboard.html', context)
 
     def post(self, request, *args, **kwargs):
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return redirect('login')
+
         if 'submit_new_reel' in request.POST:
             form = NewReelForm(request.POST)
             if form.is_valid():
                 reel_code = form.cleaned_data['reel_code']
                 existing_reel = Reel.objects.filter(
+                    user_id=user_id,
                     reel_code=reel_code,
                     reel_type=form.cleaned_data['reel_type'],
                     size_inch=form.cleaned_data['size_inch']
@@ -148,19 +163,22 @@ class DashboardView(LoginRequiredMixin, View):
                     existing_reel.save()
                     messages.success(request, "Existing reel stock updated successfully.")
                 else:
-                    form.save()
+                    new_reel = form.save(commit=False)
+                    new_reel.user_id = user_id
+                    new_reel.save()
                     messages.success(request, "New reel added successfully.")
-                
-                # Invalidate cache
+
                 cache.delete('low_stock_warnings')
                 return redirect('dashboard')
             else:
                 messages.error(request, "Please correct the errors below.")
-        
+
         elif 'submit_daily_usage' in request.POST:
             form = DailyUsageForm(request.POST)
             if form.is_valid():
                 daily_usage = form.save(commit=False)
+                daily_usage.user_id = user_id
+
                 if daily_usage.reel and daily_usage.used_weight:
                     if daily_usage.reel.current_stock >= daily_usage.used_weight:
                         Reel.objects.filter(id=daily_usage.reel.id).update(
@@ -168,25 +186,31 @@ class DashboardView(LoginRequiredMixin, View):
                         )
                         daily_usage.save()
                         messages.success(request, "Daily usage logged successfully.")
-                        # Invalidate cache
                         cache.delete('low_stock_warnings')
                     else:
                         messages.error(request, "Not enough stock available.")
                 return redirect('dashboard')
             else:
                 messages.error(request, "Please correct the errors below.")
-        
+
         return self.get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return Reel.objects.all().order_by('reel_code')
+        user_id = self.request.session.get('user_id')
+        return Reel.objects.filter(user_id=user_id).order_by('reel_code')
+
 
 def add_reel(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
     if request.method == 'POST':
         form = NewReelForm(request.POST)
         if form.is_valid():
             reel_code = form.cleaned_data['reel_code']
             existing_reel = Reel.objects.filter(
+                user_id=user_id,
                 reel_code=reel_code,
                 reel_type=form.cleaned_data['reel_type'],
                 size_inch=form.cleaned_data['size_inch']
@@ -197,10 +221,11 @@ def add_reel(request):
                 existing_reel.save()
                 messages.success(request, "Existing reel stock updated successfully.")
             else:
-                form.save()
+                new_reel = form.save(commit=False)
+                new_reel.user_id = user_id
+                new_reel.save()
                 messages.success(request, "New reel added successfully.")
-            
-            # Invalidate cache
+
             cache.delete('low_stock_warnings')
             return redirect('dashboard')
         else:
@@ -210,11 +235,18 @@ def add_reel(request):
 
     return render(request, 'inventory/add_reel.html', {'form': form})
 
+
 def add_daily_usage(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
     if request.method == 'POST':
         form = DailyUsageForm(request.POST)
         if form.is_valid():
             daily_usage = form.save(commit=False)
+            daily_usage.user_id = user_id
+
             if daily_usage.reel and daily_usage.used_weight:
                 if daily_usage.reel.current_stock >= daily_usage.used_weight:
                     Reel.objects.filter(id=daily_usage.reel.id).update(
@@ -222,7 +254,6 @@ def add_daily_usage(request):
                     )
                     daily_usage.save()
                     messages.success(request, "Daily usage logged successfully.")
-                    # Invalidate cache
                     cache.delete('low_stock_warnings')
                 else:
                     messages.error(request, "Not enough stock available.")
@@ -234,14 +265,24 @@ def add_daily_usage(request):
 
     return render(request, 'inventory/add_daily_usage.html', {'form': form})
 
+
 def delete_reel(request, pk):
-    reel = get_object_or_404(Reel, pk=pk)
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
+    reel = get_object_or_404(Reel, pk=pk, user_id=user_id)
     reel.delete()
     messages.success(request, f"Reel {reel.reel_code} has been deleted successfully.")
     return redirect('dashboard')
 
+
 def edit_reel(request, pk):
-    reel = get_object_or_404(Reel, pk=pk)
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
+    reel = get_object_or_404(Reel, pk=pk, user_id=user_id)
     if request.method == 'POST':
         form = NewReelForm(request.POST, instance=reel)
         if form.is_valid():
@@ -252,74 +293,79 @@ def edit_reel(request, pk):
             messages.error(request, "Please correct the errors below.")
     else:
         form = NewReelForm(instance=reel)
-    
+
     return render(request, 'inventory/edit_reel.html', {'form': form, 'reel': reel})
 
-class ReelReportView(DetailView):
-    model = Reel
+
+class ReelReportView(TemplateView):
     template_name = 'inventory/reel_report.html'
-    context_object_name = 'reel'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        reel = self.get_object()
+    def get(self, request, *args, **kwargs):
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return redirect('login')
 
-        # Get usage history for this reel
+        reel = get_object_or_404(Reel, pk=kwargs.get('pk'), user_id=user_id)
+
         usage_history = DailyUsage.objects.filter(reel=reel).order_by('-usage_date')
         total_usage = DailyUsage.objects.filter(reel=reel).aggregate(Sum('used_weight'))['used_weight__sum'] or 0
 
-        # Get monthly usage statistics for this reel
-        monthly_usage = DailyUsage.objects.filter(reel=reel).annotate(
-            year=ExtractYear('usage_date'),
-            month=ExtractMonth('usage_date')
-        ).values('year', 'month').annotate(
-            total_usage=Sum('used_weight')
-        ).order_by('-year', '-month')
-
-        context.update({
+        context = {
+            'reel': reel,
             'usage_history': usage_history,
             'total_usage': total_usage,
-            'monthly_usage': monthly_usage,
-        })
-        return context
+        }
+        return render(request, self.template_name, context)
+
 
 class ReportsView(TemplateView):
     template_name = 'inventory/reports.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        
-        # Get date range from request
-        start_date = self.request.GET.get('start_date')
-        end_date = self.request.GET.get('end_date')
-         
-        #Base query for daily usage
-        usage_query = DailyUsage.objects.all()
+    def get(self, request, *args, **kwargs):
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return redirect('login')
+
+        reels = Reel.objects.filter(user_id=user_id)
+        total_stock = reels.aggregate(Sum('current_stock'))['current_stock__sum'] or 0
+        total_reels = reels.count()
+        low_stock_count = reels.filter(current_stock__lte=LOW_STOCK_THRESHOLD).count()
+        avg_stock = total_stock / total_reels if total_reels else 0
+
+        # Date range filters
+        start_date = request.GET.get('start_date', None)
+        end_date = request.GET.get('end_date', None)
+
+        usage_data = DailyUsage.objects.filter(user_id=user_id)
         
         # Apply date filters if provided
         if start_date:
-            usage_query = usage_query.filter(usage_date__gte=start_date)
+            usage_data = usage_data.filter(usage_date__gte=start_date)
         if end_date:
-            usage_query = usage_query.filter(usage_date__lte=end_date)
+            usage_data = usage_data.filter(usage_date__lte=end_date)
 
-        # Get reel-wise usage statistics
-        reel_usage = usage_query.values(
-            'reel__id',  # Add reel ID to the query
-            'reel__reel_code',
-            'reel__reel_type',
-            'reel__size_inch'
+        # Calculate monthly usage
+        monthly_usage = usage_data.values('usage_date__year', 'usage_date__month').annotate(
+            total_used=Sum('used_weight'),
+            reel_count=Count('reel', distinct=True)
+        ).order_by('usage_date__year', 'usage_date__month')
+
+        # Calculate reel usage statistics
+        reel_usage = usage_data.values(
+            'reel__id', 'reel__reel_code', 'reel__reel_type', 'reel__size_inch'
         ).annotate(
             total_usage=Sum('used_weight'),
             usage_count=Count('id')
         ).order_by('-total_usage')
 
-        # Get all reels for the filter dropdown
-        all_reels = Reel.objects.all().order_by('reel_code')
-
-        context.update({
+        context = {
+            'total_stock': total_stock,
+            'total_reels': total_reels,
+            'low_stock_count': low_stock_count,
+            'avg_stock': avg_stock,
+            'monthly_usage': monthly_usage,
             'reel_usage': reel_usage,
-            'all_reels': all_reels,
             'start_date': start_date,
             'end_date': end_date,
-        })
-        return context
+        }
+        return render(request, self.template_name, context)

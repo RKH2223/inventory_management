@@ -23,9 +23,9 @@
                     
                     <div class="mb-3">
                         <label for="id_username" class="form-label">Username</label>
-                        <input type="text" name="username" class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                        <input type="text" name="username" class="form-control {% if form and form.username.errors %}is-invalid{% endif %}" 
                                id="id_username" required>
-                        {% if form.username.errors %}
+                        {% if form and form.username.errors %}
                         <div class="invalid-feedback">
                             {{ form.username.errors|join:", " }}
                         </div>
@@ -34,9 +34,9 @@
 
                     <div class="mb-3">
                         <label for="id_password" class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
+                        <input type="password" name="password" class="form-control {% if form and form.password.errors %}is-invalid{% endif %}" 
                                id="id_password" required>
-                        {% if form.password.errors %}
+                        {% if form and form.password.errors %}
                         <div class="invalid-feedback">
                             {{ form.password.errors|join:", " }}
                         </div>
@@ -52,4 +52,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

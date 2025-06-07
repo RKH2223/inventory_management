@@ -1,5 +1,6 @@
 from django import forms
-from .models import Reel, DailyUsage
+from .models import Reel, DailyUsage,CustomUser
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
 class NewReelForm(forms.ModelForm):
     class Meta:
@@ -80,3 +81,47 @@ class DailyUsageForm(forms.ModelForm):
             raise forms.ValidationError("Used weight must be greater than 0")
             
         return used_weight
+    
+# Update the CustomUserCreationForm
+class CustomUserCreationForm(forms.ModelForm):
+    password1 = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'Enter password'
+    }))
+    password2 = forms.CharField(label='Confirm Password', widget=forms.PasswordInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'Confirm password'
+    }))
+
+    class Meta:
+        model = CustomUser
+        fields = ("username", "email")
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter username'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email'}),
+        }
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("Passwords don't match")
+        return password2
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password1"])
+        if commit:
+            user.save()
+        return user
+
+class CustomAuthenticationForm(AuthenticationForm):
+    username = forms.CharField(widget=forms.TextInput(attrs={
+        'autofocus': True,
+        'class': 'form-control',
+        'placeholder': 'Username'
+    }))
+    password = forms.CharField(label="Password", strip=False, widget=forms.PasswordInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'Password'
+    }))

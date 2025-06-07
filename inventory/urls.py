@@ -1,18 +1,21 @@
 from django.urls import path
-from .views import DashboardView, add_reel, add_daily_usage, delete_reel, ReelReportView, ReportsView, edit_reel
+from . import views
 
 urlpatterns = [
-    path('', DashboardView.as_view(), name='dashboard'),
-    path('add-reel/', add_reel, name='add_reel'),
-    path('add-daily-usage/', add_daily_usage, name='add_daily_usage'),
-    path('delete-reel/<int:pk>/', delete_reel, name='delete_reel'),
-    path('edit-reel/<int:pk>/', edit_reel, name='edit_reel'),
-    path('reel-report/<int:pk>/', ReelReportView.as_view(), name='reel_report'),
-    path('reports/', ReportsView.as_view(), name='reports'),
-    # path('search/', views.search_reel, name='search_reel'),
+    path('login/', views.CustomLoginView.as_view(), name='login'),  # Keep this one
+    path('logout/', views.logout_view, name='logout'),
+    path('register/', views.register, name='register'),
 
-    
-    
-    # path('deep', views.deepview, name='deep bhai view'),
+    path('', views.DashboardView.as_view(), name='dashboard'),
 
+    path('inventory/', views.inventory_view, name='inventory'),
+    path('deepview/', views.deepview, name='deepview'),
+
+    path('add-reel/', views.add_reel, name='add_reel'),
+    path('edit-reel/<int:pk>/', views.edit_reel, name='edit_reel'),
+    path('delete-reel/<int:pk>/', views.delete_reel, name='delete_reel'),
+
+    path('add-daily-usage/', views.add_daily_usage, name='add_daily_usage'),
+    path('reel-report/<int:pk>/', views.ReelReportView.as_view(), name='reel_report'),
+    path('reports/', views.ReportsView.as_view(), name='reports'),
 ]

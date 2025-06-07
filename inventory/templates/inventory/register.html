@@ -6,7 +6,7 @@
     <div class="col-md-6 col-lg-4">
         <div class="card shadow">
             <div class="card-body">
-                <h2 class="text-center mb-4">Create Account</h2>
+                <h2 class="text-center mb-4">Register</h2>
                 
                 {% if messages %}
                 <div class="messages">
@@ -30,7 +30,17 @@
                             {{ form.username.errors|join:", " }}
                         </div>
                         {% endif %}
-                        <div class="form-text">Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                               id="id_email" required>
+                        {% if form.email.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.email.errors|join:", " }}
+                        </div>
+                        {% endif %}
                     </div>
 
                     <div class="mb-3">
@@ -42,18 +52,10 @@
                             {{ form.password1.errors|join:", " }}
                         </div>
                         {% endif %}
-                        <div class="form-text">
-                            <ul class="mb-0">
-                                <li>Your password can't be too similar to your other personal information.</li>
-                                <li>Your password must contain at least 8 characters.</li>
-                                <li>Your password can't be a commonly used password.</li>
-                                <li>Your password can't be entirely numeric.</li>
-                            </ul>
-                        </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="id_password2" class="form-label">Password confirmation</label>
+                        <label for="id_password2" class="form-label">Confirm Password</label>
                         <input type="password" name="password2" class="form-control {% if form.password2.errors %}is-invalid{% endif %}" 
                                id="id_password2" required>
                         {% if form.password2.errors %}
@@ -61,11 +63,10 @@
                             {{ form.password2.errors|join:", " }}
                         </div>
                         {% endif %}
-                        <div class="form-text">Enter the same password as before, for verification.</div>
                     </div>
 
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Create Account</button>
+                        <button type="submit" class="btn btn-primary">Register</button>
                         <a href="{% url 'login' %}" class="btn btn-outline-secondary">Already have an account? Login</a>
                     </div>
                 </form>
@@ -73,4 +74,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}
