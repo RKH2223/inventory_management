@@ -16,6 +16,7 @@ urlpatterns = [
     path('delete-reel/<int:pk>/', views.delete_reel, name='delete_reel'),
 
     path('add-daily-usage/', views.add_daily_usage, name='add_daily_usage'),
+    path('delete-daily-usage/<int:pk>/', views.delete_daily_usage, name='delete_daily_usage'),  # Add this line if it's missing
     path('reel-report/<int:pk>/', views.ReelReportView.as_view(), name='reel_report'),
     path('reports/', views.ReportsView.as_view(), name='reports'),
 ]

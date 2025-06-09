@@ -127,7 +127,7 @@ class DashboardView(View):
         avg_stock_per_reel = total_stock / total_reels if total_reels > 0 else 0
 
         from django.core.paginator import Paginator
-        paginator = Paginator(reels, 10)
+        paginator = Paginator(reels, 5)
         page_number = request.GET.get('page')
         reels = paginator.get_page(page_number)
 
@@ -241,8 +241,10 @@ def add_daily_usage(request):
     if not user_id:
         return redirect('login')
 
+    user = get_object_or_404(CustomUser, id=user_id)
+
     if request.method == 'POST':
-        form = DailyUsageForm(request.POST)
+        form = DailyUsageForm(request.POST, user=user)
         if form.is_valid():
             daily_usage = form.save(commit=False)
             daily_usage.user_id = user_id
@@ -261,7 +263,7 @@ def add_daily_usage(request):
         else:
             messages.error(request, "Please correct the errors below.")
     else:
-        form = DailyUsageForm()
+        form = DailyUsageForm(user=user)
 
     return render(request, 'inventory/add_daily_usage.html', {'form': form})
 
@@ -307,8 +309,9 @@ class ReelReportView(TemplateView):
 
         reel = get_object_or_404(Reel, pk=kwargs.get('pk'), user_id=user_id)
 
-        usage_history = DailyUsage.objects.filter(reel=reel).order_by('-usage_date')
-        total_usage = DailyUsage.objects.filter(reel=reel).aggregate(Sum('used_weight'))['used_weight__sum'] or 0
+        # Filter usage history by both reel and user_id
+        usage_history = DailyUsage.objects.filter(reel=reel, user_id=user_id).order_by('-usage_date')
+        total_usage = usage_history.aggregate(Sum('used_weight'))['used_weight__sum'] or 0
 
         context = {
             'reel': reel,
@@ -369,3 +372,23 @@ class ReportsView(TemplateView):
             'end_date': end_date,
         }
         return render(request, self.template_name, context)
+
+
+def delete_daily_usage(request, pk):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+
+    usage = get_object_or_404(DailyUsage, pk=pk, user_id=user_id)
+    reel = usage.reel
+    used_weight = usage.used_weight
+    
+    # Add the used weight back to the reel's current stock
+    reel.current_stock += used_weight
+    reel.save()
+    
+    # Delete the usage entry
+    usage.delete()
+    
+    messages.success(request, f"Usage entry of {used_weight}kg has been deleted and stock updated.")
+    return redirect('reel_report', pk=reel.pk)

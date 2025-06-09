@@ -64,9 +64,13 @@ class DailyUsageForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        # Only show reels with stock > 0
-        self.fields['reel'].queryset = Reel.objects.filter(current_stock__gt=0)
+        # Filter reels by both current stock > 0 AND the current user
+        if user:
+            self.fields['reel'].queryset = Reel.objects.filter(current_stock__gt=0, user=user)
+        else:
+            self.fields['reel'].queryset = Reel.objects.filter(current_stock__gt=0)
 
     def clean_used_weight(self):
         used_weight = self.cleaned_data['used_weight']
